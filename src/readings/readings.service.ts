@@ -1,18 +1,22 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { MetersService } from '../meters/meters.service';
+import { Reading } from './reading.entity';
 
 @Injectable()
 export class ReadingsService {
-  private readings = [
-    { id: 1, meterId: 1, kwh: 120.5, date: '2026-10-01' },
-    { id: 2, meterId: 1, kwh: 131.2, date: '2026-10-05' },
-    { id: 3, meterId: 2, kwh: 98.0, date: '2026-10-02' },
-  ];
+  constructor(
+    @InjectRepository(Reading)
+    private readonly readingsRepo: Repository<Reading>,
+    private readonly metersService: MetersService,
+  ) {}
 
-  constructor(private readonly metersService: MetersService) {}
-
-  findByMeter(meterId: number) {
-    this.metersService.findOne(meterId);
-    return this.readings.filter((r) => r.meterId === meterId);
+  async findByMeter(meterId: number): Promise<Reading[]> {
+    await this.metersService.findOne(meterId); // lanza 404 si no existe
+    return this.readingsRepo.find({
+      where: { meter: { id: meterId } },
+      order: { date: 'ASC' },
+    });
   }
 }

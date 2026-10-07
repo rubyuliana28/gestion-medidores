@@ -1,24 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-
-export interface Meter {
-  id: number;
-  serial: string;
-  address: string;
-}
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Meter } from './meter.entity';
 
 @Injectable()
 export class MetersService {
-  private meters: Meter[] = [
-    { id: 1, serial: 'MED-001', address: 'Calle 10 # 5-20' },
-    { id: 2, serial: 'MED-002', address: 'Carrera 7 # 12-45' },
-  ];
+  constructor(
+    @InjectRepository(Meter)
+    private readonly metersRepo: Repository<Meter>,
+  ) {}
 
-  findAll(): Meter[] {
-    return this.meters;
+  findAll(): Promise<Meter[]> {
+    return this.metersRepo.find({ order: { id: 'ASC' } });
   }
 
-  findOne(id: number): Meter {
-    const meter = this.meters.find((m) => m.id === id);
+  async findOne(id: number): Promise<Meter> {
+    const meter = await this.metersRepo.findOneBy({ id });
     if (!meter) {
       throw new NotFoundException(`El medidor ${id} no existe`);
     }
